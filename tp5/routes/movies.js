@@ -1,8 +1,9 @@
 var express = require('express');
+const { uniqueId } = require('lodash');
 var router = express.Router();
 const _ = require('lodash');
-
-let movies = [{
+//CLE API : cf7e79dd
+/*let movies = [{
 
     id: String,
     movie: String,
@@ -13,7 +14,23 @@ let movies = [{
     boxOffice : Number, // en USD$
     rottenTomatoesScore: Number
 
-}];
+}];*/
+const getMovieInfos = (movieTitle) =>{
+    const externalResult = "http://www.omdbapi.com/?apikey=cf7e79dd";
+    const movie = {
+        id: _.uniqueId(),
+        movie: externalResult.Title,
+        yearOfRelease: externalResult.Released,
+        duration: externalResult.Runtime,
+        actors: externalResult.Actors,
+        poster: externalResult.Poster,
+        boxOffice: externalResult.BoxOffice,
+        //rottenTomatoesScore: externalResult.Ratings[1].Value, PAS OPTI
+        rottenTomatoesScore: externalResult.find(result => result.Source === 'Rotten Tomatoes').Value
+
+}
+return movie;
+}
 
 /* PUT - CREATE */
 router.put('/movies', (req,res) => {
@@ -21,12 +38,14 @@ router.put('/movies', (req,res) => {
     const {movie} = req.body;
     //Create new unique id
     const id = _.uniqueId();
+
+    const movieInfos = getMovieInfos(movie);
     //Insert it in array
-    movies.push({movie, id});
+    movies.push({movieInfos, id});
     //Return message
     res.json({
         message: `Just added ${id}`,
-        movie: {movie, id}
+        movie: {movieInfos, id}
     });
 });
 
