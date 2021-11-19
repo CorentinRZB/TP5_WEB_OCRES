@@ -1,4 +1,5 @@
 var express = require('express');
+var axios = require('axios');
 const { uniqueId } = require('lodash');
 var router = express.Router();
 const _ = require('lodash');
@@ -15,38 +16,52 @@ const _ = require('lodash');
     rottenTomatoesScore: Number
 
 }];*/
-const getMovieInfos = (movieTitle) =>{
-    const externalResult = "http://www.omdbapi.com/?apikey=cf7e79dd";
-    const movie = {
-        id: _.uniqueId(),
-        movie: externalResult.Title,
-        yearOfRelease: externalResult.Released,
-        duration: externalResult.Runtime,
-        actors: externalResult.Actors,
-        poster: externalResult.Poster,
-        boxOffice: externalResult.BoxOffice,
-        //rottenTomatoesScore: externalResult.Ratings[1].Value, PAS OPTI
-        rottenTomatoesScore: externalResult.find(result => result.Source === 'Rotten Tomatoes').Value
 
+let movies = [];
+
+
+const getSpecificMovie = async(title) => {
+    return axios
+    .get(`http://www.omdbapi.com/?apikey=cf7e79dd&t=${title}`, {
+    crossdomain: true });
 }
-return movie;
+
+ const getMovieInfos =  (movieTitle) =>{
+    return getSpecificMovie(movieTitle).then((response) => {
+        const data = response && response.data;
+        return {
+            id: _.uniqueId(),
+            movie: data.Title,
+            yearOfRelease: data.Released,
+            duration: data.Runtime,
+            actors: data.Actors,
+            poster: data.Poster,
+            boxOffice: data.BoxOffice,
+            //rottenTomatoesScore: externalResult.Ratings[1].Value, PAS OPTI
+            //rottenTomatoesScore: data.find(result => result.Source === 'Rotten Tomatoes').Value
+            
+        }
+
+    })
 }
 
 /* PUT - CREATE */
-router.put('/movies', (req,res) => {
+router.put('/', (req,res) => {
     //Get the data from request tor request
     const {movie} = req.body;
-    //Create new unique id
-    const id = _.uniqueId();
+    getMovieInfos(movie).then((movie)=> {
+        //Create new unique id
+        const id = _.uniqueId();
 
-    const movieInfos = getMovieInfos(movie);
-    //Insert it in array
-    movies.push({movieInfos, id});
-    //Return message
-    res.json({
-        message: `Just added ${id}`,
-        movie: {movieInfos, id}
+        //Insert it in array
+        movies.push({movie, id});
+        //Return message
+        res.json({
+            message: `Just added ${id}`,
+            movie: {movie, id}
+        });
     });
+
 });
 
 
